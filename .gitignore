@@ -1,0 +1,36 @@
+# Nestjs specific
+/core_api/dist
+/core_api/node_modules
+/core_api/build
+/core_api/tmp
+/core_api/docker
+/core_api/public
+/core_api/prisma/migrations
+
+/ms_mailing/dist
+/ms_mailing/node_modules
+/ms_mailing/build
+/ms_mailing/prisma/migrations
+/ms_mailing/tmp
+
+# Logs
+Dockerfile.dev
+logs
+*.log
+npm-debug.log*
+pnpm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+lerna-debug.log*
+/core_api/migrate_done.flag
+/ms_mailing/migrate_done.flag
+
+# dotenv environment variable files
+.env
+.env.development
+.env.test
+.env.production
+
+# temp directory
+.temp
+.tmp
