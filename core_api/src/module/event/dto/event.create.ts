@@ -21,3 +21,21 @@ export class CreateMailTemplateDto {
   @IsOptional()
   variables?: Record<string, string>;
 }
+
+export class createNotificationTemplateDto {
+  @IsString()
+  @IsNotEmpty()
+  category: string;
+
+  @IsString()
+  @IsNotEmpty()
+  title: string;
+
+  @IsString()
+  @IsNotEmpty()
+  content: string;
+
+  @IsObject()
+  @IsNotEmpty()
+  payload: Record<string, any>;
+}

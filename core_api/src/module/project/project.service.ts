@@ -96,24 +96,6 @@ export class ProjectService {
   }
 
   /**
-   * Récupère un projet en fonction de son ID, en ne récupérant que les informations de base du projet
-   * @param {string} project_id L'ID du projet à récupérer
-   * @returns {Promise<iProject | null>} les informations de base du projet correspondant à l'ID, ou null si aucun projet n'a été trouvé
-   */
-  async getProjectBasicInfo(project_id: string): Promise<iProject | null> {
-    return this.prisma.project.findUnique({
-      where: { id: project_id },
-      select: {
-        id: true,
-        title: true,
-        description: true,
-        date_start: true,
-        date_end: true,
-      },
-    });
-  }
-
-  /**
    * Supprime un projet ainsi que tous ses membres, catégories de tâches et tâches associés.
    * @param {string} project_id L'ID du projet à supprimer
    * @returns {Promise<iDeleteProjectReturn | null>} Les informations du projet supprimé, ou null si aucun projet n'a été trouvé

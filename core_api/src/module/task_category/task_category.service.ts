@@ -2,7 +2,6 @@ import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../../../prisma/prisma.service';
 import { CreateTaskCategoryDto } from './dto/create-task_category.dto';
 import { iTaskCategories } from '../../core/interface/task.interface';
-import { UpdateTaskCategoryDto } from './dto/update-task_category.dto';
 
 @Injectable()
 export class TaskCategoryService {
@@ -62,19 +61,6 @@ export class TaskCategoryService {
     return true;
   }
 
-  /**
-   * Met à jour une catégorie de tâche en fonction de son ID et de nouvelles informations.
-   * @param {UpdateTaskCategoryDto} categorie Les nouvelles informations de la catégorie de tâche à mettre à jour
-   * @returns {Promise<iTaskCategories>} La catégorie de tâche mise à jour
-   */
-  async updateCategory(
-    categorie: UpdateTaskCategoryDto,
-    category_id: string,
-  ): Promise<iTaskCategories> {
-    return this.prisma.task_category.update({
-      where: { id: category_id },
-      data: { title: categorie.title },
-      select: { id: true, title: true },
-    });
-  }
+
+  
 }

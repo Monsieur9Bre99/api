@@ -62,34 +62,6 @@ export class ProjectController {
   /**
    * Récupère un projet en fonction de son ID.
    * @param {string} project_id L'ID du projet.
-   * @returns {Promise<{ result: { message: string; project: iProject } }>} Le projet correspondant à l'ID, ou une erreur 404 si le projet n'existe pas.
-   * @throws {HttpException} Si le projet n'existe pas.
-   */
-  @Get('/')
-  @UseGuards(RoleGuard)
-  @Roles('OWNER', 'ADMIN', 'COLLAB', 'GUEST')
-  @HttpCode(200)
-  async getProjectBasicInfo(
-    @Query('project_id') project_id: string,
-  ): Promise<{ result: { message: string; project: iProject } }> {
-    const projectData =
-      await this.projectService.getProjectBasicInfo(project_id);
-
-    if (!projectData) {
-      throw new HttpException('projet inexistant', HttpStatus.NOT_FOUND);
-    }
-
-    return {
-      result: {
-        message: 'projet trouver',
-        project: projectData,
-      },
-    };
-  }
-
-  /**
-   * Récupère un projet en fonction de son ID.
-   * @param {string} project_id L'ID du projet.
    * @returns {Promise<{ result: { message: string; project: iProjectData } }>} Le projet correspondant à l'ID, ou une erreur 404 si le projet n'existe pas.
    * @throws {HttpException} Si le projet n'existe pas.
    */
@@ -133,8 +105,6 @@ export class ProjectController {
       throw new HttpException('projet inexistant', HttpStatus.NOT_FOUND);
     }
 
-    console.log(deleteProject);
-
     return { result: 'projet supprimer' };
   }
 
@@ -145,7 +115,7 @@ export class ProjectController {
    * @returns {Promise<{ result: { message: string; project: iProject } }>} Le projet mis à jour.
    * @throws {HttpException} Si le projet n'existe pas.
    */
-  @Patch('/')
+  @Patch('/update')
   @UseGuards(RoleGuard)
   @Roles('OWNER')
   @HttpCode(200)
@@ -157,6 +127,10 @@ export class ProjectController {
       project_id,
       body,
     );
+
+    if (!updatedProject) {
+      throw new HttpException('projet inexistant', HttpStatus.NOT_FOUND);
+    }
 
     return {
       result: {

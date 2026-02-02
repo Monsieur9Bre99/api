@@ -13,6 +13,10 @@
 /ms_mailing/prisma/migrations
 /ms_mailing/tmp
 
+/ms_notification/dist
+/ms_notification/node_modules
+/ms_notification/build
+
 # Logs
 Dockerfile.dev
 logs

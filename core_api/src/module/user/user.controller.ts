@@ -17,11 +17,15 @@ import {
   iUserOutsideProject,
   iUserProjectList,
 } from 'src/core/interface/user.interface';
+import { EventService } from '../event/event.service';
 
 @Controller('user')
 @UseGuards(AccessTokenGuard)
 export class UserController {
-  constructor(private readonly userService: UserService) {}
+  constructor(
+    private readonly userService: UserService,
+    private readonly eventService: EventService,
+  ) {}
 
   /**
    * Récupère tous les utilisateurs en dehors du projet
@@ -84,16 +88,26 @@ export class UserController {
       );
     }
 
+    const notifications = await this.eventService.send(
+      'notification.findAllForUser',
+      { user_id },
+    );
+
+    console.log(notifications);
+
     if (userData.projects.length === 0) {
       return {
-        result: { message: "vous n'êtes sur aucun projet", user: userData },
+        result: {
+          message: "vous n'êtes sur aucun projet",
+          user: { ...userData, notifications: notifications },
+        },
       };
     }
 
     return {
       result: {
         message: "recuperation de l'utilisateur et de ça liste de projet",
-        user: userData,
+        user: { ...userData, notifications: notifications },
       },
     };
   }

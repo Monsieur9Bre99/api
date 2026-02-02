@@ -10,9 +10,13 @@ import {
   Get,
   Delete,
   Patch,
+  Req,
 } from '@nestjs/common';
 import { MemberService } from './member.service';
-import { AccessTokenGuard } from '../../core/guard/authentification.guard';
+import {
+  AccessTokenGuard,
+  iAuthentificatedRequest,
+} from '../../core/guard/authentification.guard';
 import { RoleGuard } from '../../core/guard/role.guard';
 import { Roles } from '../../core/decorator/role.decorator';
 import { AddMemberDto } from './dto/member.create.dto';
@@ -22,11 +26,17 @@ import {
   iRequestProjectMemberFormatted,
 } from 'src/core/interface/member.interface';
 import { MemberRole, Project_member } from '@prisma/client';
+import { EventService } from '../event/event.service';
+import { ProjectService } from '../project/project.service';
 
 @Controller('member')
 @UseGuards(AccessTokenGuard, RoleGuard)
 export class MemberController {
-  constructor(private readonly memberService: MemberService) {}
+  constructor(
+    private readonly memberService: MemberService,
+    private readonly eventService: EventService,
+    private projectService: ProjectService,
+  ) {}
 
   /**
    * Ajoute des membres au projet.
@@ -43,6 +53,12 @@ export class MemberController {
     @Body() body: { users: AddMemberDto[] },
     @Query('project_id') project_id: string,
   ): Promise<{ result: string }> {
+    const project = await this.projectService.getProjectById(project_id);
+
+    if (!project) {
+      throw new HttpException('projet inexistant', HttpStatus.NOT_FOUND);
+    }
+
     const addMember: { count: number } | null =
       await this.memberService.addMemberToProject(project_id, body.users);
 
@@ -52,6 +68,19 @@ export class MemberController {
         HttpStatus.BAD_REQUEST,
       );
     }
+
+    await Promise.all(
+      body.users.map((user) =>
+        this.eventService.send('notification.create', {
+          user_id: user.user_id,
+          category: 'InvitationToProject',
+          variables: {
+            project_title: project.title,
+            project_id: project_id,
+          },
+        }),
+      ),
+    );
 
     return { result: 'invitation envoyer' };
   }
@@ -69,7 +98,7 @@ export class MemberController {
   async getProjectMembers(@Query('project_id') project_id: string): Promise<{
     result: {
       message: string;
-      members: iRequestProjectMemberFormatted[] | iProjectMember[];
+      members: iRequestProjectMemberFormatted[];
     };
   }> {
     const members: iProjectMember[] =
@@ -80,15 +109,6 @@ export class MemberController {
         'impossible de recuperer les membres du projet',
         HttpStatus.BAD_REQUEST,
       );
-    }
-
-    if (members.length === 0) {
-      return {
-        result: {
-          message: 'aucun membre trouver',
-          members: members,
-        },
-      };
     }
 
     const memberList: iRequestProjectMemberFormatted[] =
@@ -114,11 +134,11 @@ export class MemberController {
   @HttpCode(200)
   @Roles('OWNER')
   async deleteProjectMember(
-    @Body() body: { user_id: string },
     @Query('project_id') project_id: string,
+    @Query('user_id') user_id: string,
   ): Promise<{ result: string }> {
     const deletedMember: Project_member | null =
-      await this.memberService.deleteMember(project_id, body.user_id);
+      await this.memberService.deleteMember(project_id, user_id);
 
     if (!deletedMember) {
       throw new HttpException(
@@ -128,6 +148,27 @@ export class MemberController {
     }
 
     return { result: 'membre supprimé du projet' };
+  }
+
+  @Delete('/leave/')
+  @HttpCode(200)
+  @Roles('ADMIN', 'COLLAB', 'GUEST')
+  async leaveProject(
+    @Req() req: iAuthentificatedRequest,
+    @Query('project_id') project_id: string,
+  ): Promise<{ result: string }> {
+    const user_id = req.user.userId;
+
+    const leave = await this.memberService.deleteMember(project_id, user_id);
+
+    if (!leave) {
+      throw new HttpException(
+        'impossible de quitter le projet',
+        HttpStatus.BAD_REQUEST,
+      );
+    }
+
+    return { result: 'projet quitter avec succès' };
   }
 
   /**
@@ -144,7 +185,7 @@ export class MemberController {
   async updateProjectMemberRole(
     @Query('project_id') project_id: string,
     @Body() body: { users: { user_id: string; role: MemberRole }[] },
-  ) {
+  ): Promise<{ result: string }> {
     const updatedMembers: iProjectMember[] =
       await this.memberService.updateProjectMemberRole(project_id, body.users);
 
@@ -155,24 +196,64 @@ export class MemberController {
       );
     }
 
-    const members: iProjectMember[] =
-      await this.memberService.getProjectMembers(project_id);
+    return {
+      result: 'membres du projet mis a jour',
+    };
+  }
 
-    if (!members) {
+  /**
+   * Accepte une invitation d'un projet.
+   *
+   * @param req La requête authentifiée.
+   * @param project_id L'ID du projet.
+   * @returns Un objet contenant le message de succès.
+   * @throws {HttpException} Si l'invitation n'a pas pu être acceptée.
+   */
+  @Patch('/accept_invitation')
+  @HttpCode(200)
+  @Roles('GUEST', 'COLLAB', 'ADMIN')
+  async acceptInvitation(
+    @Req() req: iAuthentificatedRequest,
+    @Query('project_id') project_id: string,
+  ): Promise<{ result: string }> {
+    const user_id = req.user.userId;
+
+    const accept = await this.memberService.acceptInvitation({
+      user_id,
+      project_id,
+    });
+
+    if (!accept) {
       throw new HttpException(
-        'impossible de recuperer les membres du projet',
+        "impossible d'accepter l'invitation",
         HttpStatus.BAD_REQUEST,
       );
     }
 
-    const memberList: iRequestProjectMemberFormatted[] =
-      formatProjectMemberList(members);
+    return { result: 'invitation acceptée' };
+  }
 
-    return {
-      result: {
-        message: 'membres du projet mis a jour',
-        members: memberList,
-      },
-    };
+  @Delete('/decline_invitation')
+  @HttpCode(200)
+  @Roles('GUEST', 'COLLAB', 'ADMIN')
+  async declineInvitation(
+    @Req() req: iAuthentificatedRequest,
+    @Query('project_id') project_id: string,
+  ): Promise<{ result: string }> {
+    const user_id = req.user.userId;
+
+    const decline = await this.memberService.declineInvitation({
+      user_id,
+      project_id,
+    });
+
+    if (!decline) {
+      throw new HttpException(
+        "impossible de refuser l'invitation",
+        HttpStatus.BAD_REQUEST,
+      );
+    }
+
+    return { result: 'invitation refusée' };
   }
 }

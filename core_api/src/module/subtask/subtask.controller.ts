@@ -140,7 +140,7 @@ export class SubtaskController {
       throw new HttpException('tache non trouvee', HttpStatus.BAD_REQUEST);
     }
 
-    if (task.statuts !== 'TODO' && task.statuts !== 'BACKLOG') {
+    if (task.statuts !== 'BACKLOG') {
       throw new HttpException(
         'tache en cours ou terminee, impossible de supprimer la sous-tache',
         HttpStatus.BAD_REQUEST,

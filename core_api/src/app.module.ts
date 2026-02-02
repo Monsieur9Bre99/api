@@ -16,6 +16,7 @@ import { UserTaskModule } from './module/user_task/user_task.module';
   imports: [
     ScheduleModule.forRoot(),
     ConfigModule.forRoot({ isGlobal: true, envFilePath: '.env' }),
+    EventModule,
     PrismaModule,
     AuthentificationModule,
     MemberModule,
@@ -26,7 +27,6 @@ import { UserTaskModule } from './module/user_task/user_task.module';
     UserTaskModule,
     SubtaskModule,
     TokenModule,
-    EventModule,
   ],
   controllers: [],
   providers: [],

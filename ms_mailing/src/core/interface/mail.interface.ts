@@ -3,11 +3,13 @@ export interface iCreateMailTemplate {
   subject: string;
   bodyHtml: string;
   bodyText?: string;
-  variables?: { string: string };
+  variables?: Record<string, string>;
+  // ou variables?: { [key: string]: string };
 }
 
 export interface iSendMailInfo {
   to: string;
   template_name: string;
-  variables: { string: string };
+  variables: Record<string, string>;
+  // ou { [key: string]: string }
 }

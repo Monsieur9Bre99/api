@@ -3,6 +3,13 @@ import { EventService } from './event.service';
 import { EventController } from './event.controller';
 import { ClientsModule, Transport } from '@nestjs/microservices';
 
+console.log('ENV NATS_DNS =', process.env.NATS_DNS);
+console.log('ENV NATS_PORT =', process.env.NATS_PORT);
+console.log(
+  'NATS URL =',
+  `nats://${process.env.NATS_DNS}:${process.env.NATS_PORT}`,
+);
+
 @Global()
 @Module({
   imports: [
@@ -11,7 +18,9 @@ import { ClientsModule, Transport } from '@nestjs/microservices';
         name: 'NATS_SERVICE',
         transport: Transport.NATS,
         options: {
-          servers: [`nats://${process.env.NATS_DNS}:${process.env.NATS_PORT}`],
+          servers: [
+            `nats://${process.env.NATS_DNS}:${process.env.NATS_PORT}`,
+          ],
         },
       },
     ]),

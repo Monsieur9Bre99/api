@@ -188,6 +188,7 @@ export class AuthentificationController {
   @HttpCode(200)
   async signoutUser(
     @Body() body: { userId: string },
+    @Res({ passthrough: true }) res: Response,
   ): Promise<{ result: string }> {
     const isUserExist: User | null = await this.userService.getByUniqueKey(
       body.userId,
@@ -201,6 +202,13 @@ export class AuthentificationController {
     }
 
     await this.tokenService.removeToken(body.userId, 'REFRESH');
+
+    res.clearCookie('refreshToken', {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
+      path: '/',
+    });
 
     return { result: 'déconnexion réussie' };
   }
@@ -231,8 +239,15 @@ export class AuthentificationController {
       );
     }
 
-    await this.userService.updateUser(user.user_id, { is_confirmed: true });
+    const updatedUser = await this.userService.updateUser(user.user_id, {
+      is_confirmed: true,
+    });
     await this.tokenService.removeToken(user.user_id, 'EMAIL');
+
+    this.eventService.emit('user-preferences.create', {
+      user_id: updatedUser.id,
+      email: updatedUser.email,
+    });
 
     return { result: 'compte utilisateur confirmé avec succès' };
   }

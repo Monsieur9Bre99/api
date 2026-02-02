@@ -123,6 +123,7 @@ export class UserService {
         lastname: true,
         projects: {
           select: {
+            is_confirmed: true,
             role: true,
             project: {
               select: {

@@ -139,4 +139,29 @@ export class MemberService {
       ),
     );
   }
+
+  async acceptInvitation(data: {
+    user_id: string;
+    project_id: string;
+  }): Promise<Project_member | null> {
+    return this.prisma.project_member.update({
+      where: {
+        user_project_id: { user_id: data.user_id, project_id: data.project_id },
+        is_confirmed: false,
+      },
+      data: { is_confirmed: true },
+    });
+  }
+
+  async declineInvitation(data: {
+    user_id: string;
+    project_id: string;
+  }): Promise<Project_member | null> {
+    return this.prisma.project_member.delete({
+      where: {
+        user_project_id: { user_id: data.user_id, project_id: data.project_id },
+        is_confirmed: false,
+      },
+    });
+  }
 }

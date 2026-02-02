@@ -139,13 +139,13 @@ export class TaskController {
       result: { message: 'tâche créée avec succès', task: createdTask },
     };
   }
-  
+
   /**
    * Récupère la liste des tâches liées à un projet
    * @param {string} project_id L'ID du projet
    * @returns {Promise<{ result: string } | { result: { message: string; taskList: iTaskData[] } }>}
    * La liste des tâches liées au projet, ou un message d'erreur si aucune tâche n'a été trouvée
-  */
+   */
   @Get('/')
   @Roles('OWNER', 'ADMIN', 'COLLAB', 'GUEST')
   @HttpCode(200)
@@ -183,7 +183,7 @@ export class TaskController {
    * @param {string} project_id L'ID du projet
    * @param {string} task_id L'ID de la tâche à récupérer
    * @returns {Promise<{ result: {message: string; task: iTaskData } >} La tâche correspondant à l'ID, ou null si aucune tâche n'a été trouvée
-  */
+   */
   @Get('/:task_id')
   @Roles('OWNER', 'ADMIN', 'COLLAB', 'GUEST')
   @HttpCode(200)
@@ -214,7 +214,7 @@ export class TaskController {
    * @param {string} task_id L'ID de la tâche à supprimer
    * @returns {Promise<{ result: string }>} Le résultat de la suppression de la tâche
    */
-  @Delete('/:task_id')
+  @Delete('/delete/:task_id')
   @Roles('OWNER')
   @HttpCode(200)
   async deleteTask(
@@ -240,9 +240,6 @@ export class TaskController {
         'uploads',
         `${filename}`,
       );
-      console.log(imgUrl);
-      console.log(filename);
-      console.log(filePath);
 
       fs.unlink(filePath, (err) => {
         if (err) {
@@ -376,7 +373,6 @@ export class TaskController {
 
     switch (body.newStatuts) {
       case 'BACKLOG':
-      case 'TODO':
         if (existingTask.statuts !== 'FINISHED') {
           updatedTask = await this.taskService.resetTask(
             project_id,
@@ -386,11 +382,30 @@ export class TaskController {
         }
         break;
 
-      case 'ON_GOING':
+      case 'TODO':
         if (
-          isAssigned &&
-          existingTask.subtasks?.every((subtask) => subtask.is_done !== true)
+          existingTask.statuts === 'BACKLOG' ||
+          (existingTask.statuts === 'ON_GOING' && isAssigned)
         ) {
+          if (
+            existingTask.worked_time !== 0 ||
+            existingTask.subtasks?.some((subtask) => subtask.is_done === true)
+          ) {
+            throw new HttpException(
+              "La tâche n'a pas pu avoir son statut mis à jour",
+              HttpStatus.BAD_REQUEST,
+            );
+          }
+          updatedTask = await this.taskService.resetTask(
+            project_id,
+            task_id,
+            body.newStatuts,
+          );
+        }
+        break;
+
+      case 'ON_GOING':
+        if (isAssigned) {
           updatedTask = await this.taskService.startTask(project_id, task_id);
         }
         break;
@@ -478,6 +493,64 @@ export class TaskController {
 
     return {
       result: 'temps de travaille ajouter avec succès',
+    };
+  }
+
+  /**
+   * Supprime l'image d'une tâche
+   * @param {iAuthentificatedRequest} request La requête HTTP authentifiée
+   * @param {string} task_id L'ID de la tâche dont l'image
+   * @param {string} project_id L'ID du projet dont l'image
+   * @returns {Promise<string>} Le message de rÂussite de la suppression de l'image
+   */
+  @Delete('/remove_image/:task_id')
+  @Roles('OWNER', 'ADMIN')
+  @HttpCode(200)
+  async removeTaskImage(
+    @Req() request: iAuthentificatedRequest,
+    @Param('task_id') task_id: string,
+    @Query('project_id') project_id: string,
+  ): Promise<{ result: string }> {
+    const existingTask: iTaskData | null = await this.taskService.getTaskById(
+      task_id,
+      project_id,
+    );
+
+    if (!existingTask) {
+      throw new HttpException(
+        "La tâche n'existe pas ou ne peut pas avoir son image supprimée",
+        HttpStatus.BAD_REQUEST,
+      );
+    }
+
+    const imageRemoved = await this.taskService.removeTaskImage(task_id);
+
+    if (!imageRemoved) {
+      throw new HttpException(
+        "L'image de la tâche n'a pas pu être supprimée",
+        HttpStatus.BAD_REQUEST,
+      );
+    }
+
+    if (typeof existingTask === 'object' && existingTask.image) {
+      const imgUrl = existingTask.image;
+      const filename = imgUrl.split('/').pop();
+      const filePath = path.join(
+        process.cwd(),
+        'public',
+        'uploads',
+        `${filename}`,
+      );
+
+      fs.unlink(filePath, (err) => {
+        if (err) {
+          console.error(err);
+        }
+      });
+    }
+
+    return {
+      result: 'image de la tâche supprimée avec succès',
     };
   }
 }

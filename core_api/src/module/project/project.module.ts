@@ -6,7 +6,11 @@ import { AuthentificationModule } from '../authentification/authentification.mod
 import { MemberModule } from '../member/member.module';
 
 @Module({
-  imports: [JwtModule, forwardRef(() => AuthentificationModule), MemberModule],
+  imports: [
+    JwtModule,
+    forwardRef(() => AuthentificationModule),
+    forwardRef(() => MemberModule),
+  ],
   controllers: [ProjectController],
   providers: [ProjectService],
   exports: [ProjectService],

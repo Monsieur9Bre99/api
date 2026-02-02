@@ -1,11 +1,6 @@
 import { TaskPriority } from '@prisma/client';
 import { Transform } from 'class-transformer';
-import {
-  IsEnum,
-  IsNotEmpty,
-  IsOptional,
-  IsString,
-} from 'class-validator';
+import { IsEnum, IsNotEmpty, IsOptional, IsString } from 'class-validator';
 
 export class CreateTaskDto {
   @IsString()
@@ -35,8 +30,10 @@ export class CreateTaskDto {
 
 export class CreateTaskPayload extends CreateTaskDto {
   @IsNotEmpty()
+  @Transform(({ value }) => JSON.parse(value || '[]'))
   users: string | string[];
 
   @IsOptional()
-  subtasks?: string |string[];
+  @Transform(({ value }) => JSON.parse(value || '[]'))
+  subtasks?: string | string[];
 }

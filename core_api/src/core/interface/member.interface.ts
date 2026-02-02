@@ -7,6 +7,7 @@ export interface iRequestProjectMember {
     id: string;
     firstname: string;
     lastname: string;
+    username: string;
     email: string;
   };
 }
@@ -15,6 +16,7 @@ export interface iRequestProjectMemberFormatted {
   id: string;
   firstname: string;
   lastname: string;
+  username: string;
   email: string;
   role: MemberRole;
   is_confirmed: boolean;

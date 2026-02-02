@@ -19,11 +19,9 @@ export class PrismaService
   }
   async onModuleInit(): Promise<void> {
     await this.$connect();
-    console.log('Prisma connecté');
   }
 
   async onModuleDestroy(): Promise<void> {
     await this.$disconnect();
-    console.log('Prisma déconnecté');
   }
 }

@@ -5,7 +5,7 @@ import {
 
 /**
  * Formate une liste de membres d'un projet en les données attendues.
- * 
+ *
  * @param {iRequestProjectMember[]} rawMemberList - La liste de membres brutes.
  * @returns {iRequestProjectMemberFormatted[]} - La liste de membres formatées.
  */
@@ -19,6 +19,7 @@ export const formatProjectMemberList = (
       id: rawMember.user.id,
       firstname: rawMember.user.firstname,
       lastname: rawMember.user.lastname,
+      username: rawMember.user.username,
       email: rawMember.user.email,
       role: rawMember.role,
       is_confirmed: rawMember.is_confirmed,

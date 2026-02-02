@@ -318,4 +318,12 @@ export class TaskService {
     });
     return task ? true : false;
   }
+
+  async removeTaskImage(task_id: string): Promise<boolean> {
+    const task = await this.prisma.task.update({
+      where: { id: task_id },
+      data: { image: '' },
+    });
+    return task ? true : false;
+  }
 }
